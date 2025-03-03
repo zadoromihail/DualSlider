@@ -29,6 +29,10 @@ final class DualSliderView: UIControl {
     private var lastMinValue: CGFloat = 0
     private var lastMaxValue: CGFloat = 0
     
+    /// Смещение между точкой касания и центром активного ползунка в момент начала перетаскивания
+    /// Используется для предотвращения скачков при движении ползунка
+    private var startOffsetX: CGFloat = 0
+    
     /// Массив возможных значений (если значения будут начинаться не с 0)
     private var valuesArray = [Int]()
 
@@ -88,7 +92,8 @@ final class DualSliderView: UIControl {
 
     private func setupThumb(_ thumb: UIView) {
         addSubview(thumb)
-        thumb.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:))))
+        let panGesture = InstantPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        thumb.addGestureRecognizer(panGesture)
     }
     
     private func prepareUI() {
@@ -100,7 +105,7 @@ final class DualSliderView: UIControl {
         }
         
         if let index = valuesArray.firstIndex(of: configuration.maxSliderInitialValue) {
-            maxThumbCenterX = point * CGFloat(index)
+            maxThumbCenterX = point * CGFloat(index) + thumbSize
         }
     }
     
@@ -146,13 +151,18 @@ final class DualSliderView: UIControl {
             /// Запоминаем активный ползунок
             activeThumb = gesture.view
 
+            if let activeThumb {
+                let centerX = activeThumb == minThumb ? minThumbCenterX : maxThumbCenterX
+                startOffsetX = touchPoint.x - centerX
+            }
+
         case .changed:
             guard let _ = startTouchPoint,
                   let _ = activeThumb else {
                 return
             }
 
-            var newX = touchPoint.x
+            var newX = touchPoint.x - startOffsetX
 
             if gesture.view == minThumb {
                 newX = max(newX, 0)
