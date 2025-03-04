@@ -52,6 +52,8 @@ final class AgeSelectorView: UIView {
         return label
     }()
     
+    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+    
     // MARK: Override
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -99,6 +101,7 @@ final class AgeSelectorView: UIView {
             dualSlider.heightAnchor.constraint(equalToConstant: 56)
         ])
         dualSlider.delegate = self
+        feedbackGenerator.prepare()
     }
     
     private func setupBaseTextLabel() {
@@ -114,8 +117,16 @@ final class AgeSelectorView: UIView {
 // MARK: CustomRangeSliderDelegate
 extension AgeSelectorView: DualSliderViewDelegate {
     func didChangeValue(_ minValue: CGFloat, _ maxValue: CGFloat) {
-        self.minValue = Int(minValue)
-        self.maxValue = Int(maxValue)
+        let newMinValue = Int(minValue)
+        let newMaxValue = Int(maxValue)
+
+        guard self.minValue != newMinValue || self.maxValue != newMaxValue else { return }
+
+        self.minValue = newMinValue
+        self.maxValue = newMaxValue
+
         updateUI()
+
+        feedbackGenerator.impactOccurred()
     }
 }
